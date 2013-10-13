@@ -67,3 +67,8 @@ Connect:
  $ telnet 127.0.0.1 1236
 
 
+References:
+http://infocenter.arm.com/help/topic/com.arm.doc.dui0224i/DUI0224I_realview_platform_baseboard_for_arm926ej_s_ug.pdf
+http://infocenter.arm.com/help/topic/com.arm.doc.ddi0183f/DDI0183.pdf
+
+
