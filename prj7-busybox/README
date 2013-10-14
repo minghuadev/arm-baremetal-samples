@@ -1,0 +1,58 @@
+
+http://balau82.wordpress.com/2010/03/27/busybox-for-arm-on-qemu/
+Busybox for ARM on QEMU
+Posted on 2010/03/27
+
+
+Build:
+
+ $ make ARCH=arm CROSS_COMPILE=arm-none-linux-gnueabi- defconfig
+ $ make ARCH=arm CROSS_COMPILE=arm-none-linux-gnueabi- menuconfig
+
+checked the option to compile Busybox as a static executable, so that 
+we don’t have to copy the dynamic libraries inside the root filesystem. 
+The setting is in “Busybox Settings --> Build Options“. 
+
+ $ make ARCH=arm CROSS_COMPILE=arm-none-linux-gnueabi- install
+
+
+Create rootfs and run:
+
+ $ cd _install
+ $ find . | cpio -o --format=newc > ../rootfs.img
+ $ cd ..
+ $ gzip -c rootfs.img > rootfs.img.gz
+
+ $ qemu-system-arm -M versatilepb -m 128M -kernel zImage -initrd rootfs.img.gz -append "root=/dev/ram rdinit=/bin/sh"
+
+
+Create init rcS:
+
+ $ cd _install
+ $ mkdir proc sys dev etc etc/init.d
+ $ cd ..
+
+Now we create a new _install/etc/init.d/rcS with the following content:
+	
+ #!/bin/sh
+ mount -t proc none /proc
+ mount -t sysfs none /sys
+ /sbin/mdev -s
+
+ $ chmod +x _install/etc/init.d/rcS
+
+
+We can then recreate an updated root filesystem compressed image as before, and run:
+	
+ $ qemu-system-arm -M versatilepb -m 128M -kernel zImage -initrd rootfs.img.gz -append "root=/dev/ram rdinit=/sbin/init"
+
+The Linux kernel will boot again, but this time it is asking to press Enter, 
+and when we do the usual console prompt will appear. The system directories 
+are fully populated, meaning that the script rcS has been executed; other 
+than that, /sbin/init also spawns shell terminals using getty.
+
+In our example the Busybox filesystem is accessed using a ram disk, but it 
+can also be read from a physical disk storage or loaded from the network 
+using NFS protocol. 
+
+

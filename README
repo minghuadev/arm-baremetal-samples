@@ -8,4 +8,5 @@ Samples from balau82.wordpress.com
   prj4-semihosting/
   prj5-ubootqemu/    --based on prj2 hello world sample
   prj6-kernelqemu/
+  prj7-busybox/
 
