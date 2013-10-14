@@ -7,4 +7,5 @@ Samples from balau82.wordpress.com
   prj3-pl011serial/
   prj4-semihosting/
   prj5-ubootqemu/    --based on prj2 hello world sample
+  prj6-kernelqemu/
 

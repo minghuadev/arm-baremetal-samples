@@ -1,0 +1,62 @@
+
+http://balau82.wordpress.com/2010/03/22/compiling-linux-kernel-for-qemu-arm-emulator/
+Compiling Linux kernel for QEMU ARM emulator
+Posted on 2010/03/22
+
+
+Toolchain note:
+
+From version 2010q1 the code-sourcery arm eabi manual explicitly says 
+that the compiler is not intended for Linux kernel development. It is 
+anyway possible to use the gnu/linux toolchain for the same scope. 
+
+
+Build and run the kernel:
+
+ make ARCH=arm versatile_defconfig
+ make ARCH=arm menuconfig
+ make ARCH=arm CROSS_COMPILE=arm-none-eabi- all
+	
+or use the gnu/linux toolchain:
+
+ make ARCH=arm CROSS_COMPILE=arm-none-linux-gnueabi- all
+
+Then run with missing rootfs: 
+
+ qemu-system-arm -M versatilepb -m 128M -kernel zImage
+
+
+Build a rootfs:
+
+Put this in test.c:
+
+ #include <stdio.h>
+ void main() {
+  printf("Hello World!\n");
+  while(1);
+ }
+
+Compile and create a simple filesystem:
+
+ arm-none-linux-gnueabi-gcc -static    test.c   -o test
+ echo test | cpio -o --format=newc > rootfs
+
+The cpio tool takes a list of files and outputs an archive; 
+the newc format is the format of the initramfs filesystem, 
+that the Linux kernel recognizes. The rootfs file in our case 
+is a binary image of a filesystem containing a single file, 
+that is the test ELF program. QEMU can pass the filesystem 
+binary image to the kernel using the initrd parameter; the 
+kernel must also know that the root filesystem will be 
+located in RAM (because that’s where QEMU writes the initrd 
+binary) and that the program to launch is our test executable, 
+so the command line becomes:
+
+ qemu-system-arm -M versatilepb -m 128M -kernel zImage -initrd rootfs -append "root=/dev/ram rdinit=/test"
+
+The QEMU window will show the boot messages we saw before, 
+but at the end of the execution a “Hello World!” will be displayed. 
+The next step would be to create a working filesystem with a command 
+shell and at least basic functionality.
+
+
