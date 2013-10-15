@@ -1,0 +1,54 @@
+
+http://balau82.wordpress.com/2012/04/15/arm926-interrupts-in-qemu/
+ARM926 interrupts in QEMU
+Posted on 2012/04/15
+
+
+The sample is based on the hello-world sample
+
+
+The vector table needs to be copied as the code is loaded to 0x10000, 
+the vector table is located at 0x0.
+
+
+When the core receives an exception it changes operating mode, and 
+this means (among other things) that it uses a different stack pointer. 
+For this reason before enabling interrupts it is necessary to configure 
+the stack for the modes that we intend to use.
+
+The operating mode can be changed manually by accessing the Program 
+Status Register (cpsr), which must also be used to enable IRQs. More 
+information on the ARM9EJ-S Technical Reference Manual.
+
+I want to use the UART as a simple peripheral that uses IRQ to function. 
+The Versatile manual indicates that an Interrupt Controller is used 
+to manage the various IRQs. The following manuals are needed to understand 
+what to do:
+
+    RealView Platform Baseboard for ARM926EJ-S User Guide
+    PrimeCell UART (PL011) Technical Reference Manual
+    PrimeCell Vectored Interrupt Controller (PL190) Technical Reference Manual
+
+In order to enable IRQ for UART, the interrupt must be enabled in three places:
+
+    The IRQs must be enabled in the ARM cpsr
+    The UART IRQ must be enabled in the Interrupt Controller
+    The interrupt generation must be enabled in UART registers for the chosen events
+
+I will use the “RX” event to fire an interrupt that manages the arrival 
+of a byte from the UART, and then send it back as a sort of “echo”. 
+
+
+Compile:
+
+  arm-none-eabi-gcc -mcpu=arm926ej-s -c -o test.o test.c
+  arm-none-eabi-gcc -mcpu=arm926ej-s -c -o vectors.o vectors.S
+  arm-none-eabi-gcc -T test.ld test.o vectors.o -o test
+  arm-none-eabi-objcopy -O binary test test.bin
+
+
+Run:
+
+  qemu-system-arm -M versatilepb -serial stdio -kernel test.bin
+
+
