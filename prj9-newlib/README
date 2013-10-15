@@ -1,0 +1,68 @@
+
+http://balau82.wordpress.com/2010/12/16/using-newlib-in-arm-bare-metal-programs/
+Using Newlib in ARM bare metal programs
+Posted on 2010/12/16
+
+
+Build newlib: with sourcery G++ Lite 2010.09-51
+
+ $ wget ftp://sources.redhat.com/pub/newlib/newlib-1.18.0.tar.gz
+ $ tar xzf newlib-1.18.0.tar.gz
+ $ cd newlib-1.18.0/
+ $ ./configure --target arm-none-eabi --disable-newlib-supplied-syscalls
+ $ make
+ $ cd ..
+
+The “--disable-newlib-supplied-syscalls” option is necessary because 
+otherwise Newlib compiles some pre-defined libraries for ARM that are 
+useful in conjunction with debug features such as the RDI monitor. 
+Many different outputs are compiled inside the arm-none-eabi subdirectory, 
+but in particular the “libc.a” archive in the newlib directory is the one 
+I use.
+
+
+Build the example:
+
+ $ arm-none-eabi-gcc -mcpu=cortex-a8 -I ./newlib-1.18.0/newlib/libc/include   -c -o test.o test.c
+ $ arm-none-eabi-as -mcpu=cortex-a8  -o startup.o startup.s
+ $ arm-none-eabi-gcc -nostdlib  -T test.ld  test.o startup.o  ./newlib-1.18.0/arm-none-eabi/newlib/libc.a /home/francesco/CodeSourcery/Sourcery_G++_Lite/lib/gcc/arm-none-eabi/4.5.1/libgcc.a -o test
+
+One thing that the program needs is the libgcc library: it provides some 
+basic hardware functionalities, such as the division, that are used by 
+the compiler. If the linking phase complains about some undefined 
+reference to “__aeabi_...” symbol, it probably means that there’s some 
+problem regarding the libgcc library. The CodeSourcery toolchain version 
+2010.09-51 comes with its own version of this library inside the folder 
+“~/CodeSourcery/Sourcery_G++_Lite/lib/gcc/arm-none-eabi/4.5.1/libgcc.a“; 
+the folder may slightly change depending on the toolchain version and 
+installation path.
+
+The missing functions can be ported by following 
+http://wiki.osdev.org/Porting_Newlib
+
+The “hardware” where I will make the program run is the QEMU emulation 
+of the Versatile Platform Baseboard Cortex-A8 platform. According to 
+the RealView® Platform Baseboard for Cortex™-A8 User Guide, there is 
+a memory-mapped UART serial port at address 0x10009000, and my intention 
+is to write output and read input using this UART.
+
+The _sbrk function is used to increase the memory allocated by the program; 
+modifying slightly the minimal implementation I use the memory space 
+between the heap_low and the heap_top symbols that I defined inside 
+the linker script. This is my implementation of “syscalls.c“:
+
+
+Build and run:
+
+First build test.c and startup.s same as before. Then ...
+
+ $ arm-none-eabi-gcc -mcpu=cortex-a8 -I ./newlib-1.18.0/newlib/libc/include   -c -o syscalls.o syscalls.c
+ $ arm-none-eabi-gcc -nostdlib  -T test.ld   test.o startup.o syscalls.o  ./newlib-1.18.0/arm-none-eabi/newlib/libc.a   ~/CodeSourcery/Sourcery_G++_Lite/lib/gcc/arm-none-eabi/4.5.1/libgcc.a  -o test
+ $ arm-none-eabi-objcopy -O binary test test.bin
+ $ qemu-system-arm -M realview-pb-a8 -serial stdio -kernel test.bin
+
+
+See also:
+
+http://www.eetimes.com/discussion/other/4024637/Embedding-with-GNU-newlib
+

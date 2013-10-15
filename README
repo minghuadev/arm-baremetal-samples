@@ -10,10 +10,10 @@ Samples from balau82.wordpress.com
   prj6-kernelqemu/
   prj7-busybox/
   prj8-ubootlinuxqemu/
+  prj9-newlib/
 
 
 more samples...
   openrisc core and simulation
-  Newlib on baremetal
   ZPUino open source processor
 
